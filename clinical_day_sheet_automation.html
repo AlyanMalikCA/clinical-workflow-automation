@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src data:; media-src 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Clinical Workflow Day Sheet Automation</title>
+<style>
+  :root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif; color: #161616; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f5f6f7; }
+  .app { max-width: 1040px; margin: 28px auto 20px; padding: 0 18px; }
+  .panel { background: #fff; border: 1px solid #dedede; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.04); padding: 26px; }
+  .app-heading { display: flex; align-items: center; gap: 15px; margin-bottom: 2px; }
+  .app-title { margin: 0; font-size: 28px; letter-spacing: -0.02em; }
+  .app-subtitle { margin: 7px 0 24px; color: #666; font-size: 14px; }
+  .workflow { display: grid; grid-template-columns: minmax(0,1fr) 220px; gap: 18px; align-items: end; }
+  .field-label { display: block; font-size: 13px; font-weight: 800; margin: 0 0 7px; }
+  input, button { font: inherit; }
+  input[type="file"], input[type="date"] { width: 100%; min-height: 44px; border: 1px solid #b9b9b9; border-radius: 8px; background: #fff; padding: 9px 11px; }
+  input[type="file"] { padding: 8px; }
+  .file-info { min-height: 18px; margin-top: 7px; color: #666; font-size: 12px; }
+  .section-label { margin: 24px 0 9px; font-size: 13px; font-weight: 800; }
+  .practitioner-box { border: 1px solid #d6d6d6; border-radius: 10px; padding: 12px; min-height: 74px; }
+  .selector-topline { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; color: #606060; font-size: 12px; }
+  .selector-buttons { display: flex; flex-wrap: wrap; gap: 9px; justify-content: flex-end; }
+  .link-button { padding: 0; border: 0; background: transparent; color: #1c4d8c; cursor: pointer; font-weight: 700; font-size: 12px; }
+  .practitioner-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
+  .practitioner-option { display: flex; align-items: center; gap: 9px; padding: 10px 11px; border: 1px solid #e2e2e2; border-radius: 8px; cursor: pointer; background: #fafafa; }
+  .practitioner-option:hover { background: #f4f4f4; }
+  .practitioner-option input { width: 18px; height: 18px; margin: 0; flex: 0 0 auto; }
+  .practitioner-option span { min-width: 0; }
+  .practitioner-option strong { display: block; font-size: 13px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .practitioner-option small { display: block; margin-top: 2px; color: #777; font-size: 11px; }
+  .empty-selector { color: #777; font-size: 13px; padding: 8px 3px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+  button.action { min-height: 42px; padding: 9px 17px; border: 1px solid transparent; border-radius: 8px; cursor: pointer; font-weight: 800; }
+  button.primary { background: #161616; color: #fff; }
+  button.secondary { background: #fff; border-color: #bdbdbd; color: #222; }
+  button.clear-danger { background: #b42318; border-color: #b42318; color: #fff; font-weight: 900; }
+  button.clear-danger:hover { background: #941b13; }
+  button.action:disabled { opacity: .42; cursor: default; }
+  .coverage-warning { margin-top: 14px; padding: 11px 13px; border: 1px solid #d92d20; background: #fff3f2; color: #9b1c1c; border-radius: 8px; font-size: 13px; font-weight: 750; line-height: 1.35; }
+  .status { min-height: 20px; margin-top: 12px; font-size: 13px; color: #555; }
+  .success-text { color: #24663e; font-weight: 700; }
+  .privacy-note { margin-top: 18px; padding-top: 14px; border-top: 1px solid #ededed; color: #777; font-size: 11px; }
+  .preview-wrap { max-width: 1040px; margin: 0 auto 40px; padding: 0 18px; }
+  .preview-heading { display: flex; align-items: center; justify-content: space-between; margin: 20px 0 9px; }
+  .preview-heading h2 { margin: 0; font-size: 17px; }
+  .sheet-preview-block { margin: 0; }
+  .sheet-savebar { width: 10.55in; margin: 16px auto -8px; display: flex; justify-content: flex-end; }
+  .save-pdf-btn, .email-sheet-btn { min-height: 36px; padding: 7px 13px; border: 1px solid #bdbdbd; border-radius: 7px; background: #fff; color: #222; font-weight: 800; cursor: pointer; }
+  .save-pdf-btn:hover, .email-sheet-btn:hover { background: #f3f3f3; }
+  .sheet-savebar { gap: 8px; }
+  #output { min-height: 260px; }
+  .preview-empty { display: grid; place-items: center; min-height: 240px; background: #fff; border: 1px dashed #cfcfcf; border-radius: 12px; color: #8a8a8a; font-size: 13px; }
+  .hidden { display: none !important; }
+  .muted { color: #777; }
+
+  .day-sheet { width: 10.55in; min-height: 7.75in; box-sizing: border-box; margin: 18px auto; padding: 0.24in; background: #fff; border: 1px solid #d1d5db; page-break-after: always; }
+  .sheet-header { display: grid; grid-template-columns: 1.55fr 1fr 1.15fr; gap: 18px; align-items: start; padding-bottom: 12px; }
+  .sheet-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .practitioner-name { font-size: 27px; font-weight: 800; line-height: 1.05; }
+  .sheet-date { font-size: 21px; font-weight: 800; text-align: center; line-height: 1.15; }
+  .metrics { font-size: 13px; line-height: 1.55; text-align: right; }
+  .metrics strong { display: inline-block; min-width: 35px; }
+  .day-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .day-table col:nth-child(1) { width: 7%; }
+  .day-table col:nth-child(2) { width: 11%; }
+  .day-table col:nth-child(3) { width: 17%; }
+  .day-table col:nth-child(4) { width: 10.5%; }
+  .day-table col:nth-child(5) { width: 10.5%; }
+  .day-table col:nth-child(6) { width: 10.5%; }
+  .day-table col:nth-child(7) { width: 33.5%; }
+  .day-table th, .day-table td { border: 1.5px solid #111; padding: 5px 6px; vertical-align: middle; font-size: 10.9px; min-height: 28px; overflow-wrap: anywhere; }
+  .day-table th { font-size: 11.3px; text-align: left; background: #f4f4f4; }
+  .time-cell { white-space: nowrap; font-weight: 800; }
+  .primary-next-header { font-size: 12.2px !important; font-weight: 900 !important; background: #eaf1fb !important; }
+  .primary-next-cell { font-size: 11.8px !important; font-weight: 800; line-height: 1.22; }
+  .secondary-next-header { color: #555; }
+  .secondary-next-cell { font-size: 10.5px !important; }
+  .patient-name { font-size: 14.5px; font-weight: 900; line-height: 1.15; }
+  .patient-red, .day-table tr.patient-red td { color: #c00000; }
+  .patient-blue, .day-table tr.patient-blue td { color: #0057b8; }
+  .patient-black, .day-table tr.patient-black td { color: #000; }
+  .patient-orange, .day-table tr.patient-orange td { color: #14833b; }
+  .notes-cell { min-height: 24px; }
+  .schedule-gap td { height: 21px; color: #000 !important; }
+  .schedule-gap .gap-label { font-size: 12px; font-weight: 700; color: #555; white-space: nowrap; }
+
+  @media (max-width: 720px) {
+    .workflow { grid-template-columns: 1fr; }
+    .panel { padding: 20px; }
+  }
+
+  @page { size: Letter landscape; margin: 0.32in 0.30in; }
+  @media print {
+    body { background: #fff; }
+    .app, .preview-heading, .sheet-savebar { display: none !important; }
+    .preview-wrap { max-width: none; margin: 0; padding: 0; }
+    #output { display: block !important; min-height: 0; }
+    .preview-empty { display: none !important; }
+    .sheet-preview-block { break-after: page; page-break-after: always; }
+    .sheet-preview-block:last-child { break-after: auto; page-break-after: auto; }
+    body.single-sheet-print .sheet-preview-block { display: none !important; }
+    body.single-sheet-print .sheet-preview-block.pdf-selected { display: block !important; break-after: auto; page-break-after: auto; }
+    .day-sheet { margin: 0; border: 0; width: 100%; min-height: auto; padding: 0; page-break-after: auto; }
+    .day-table thead { display: table-header-group; }
+    .day-table tr { break-inside: avoid; page-break-inside: avoid; }
+    .day-table th, .patient-red, .patient-blue, .patient-black, .patient-orange, .day-table tr.patient-red td, .day-table tr.patient-blue td, .day-table tr.patient-black td, .day-table tr.patient-orange td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="panel">
+    <div class="app-heading">
+<div>
+        <h1 class="app-title">Clinical Workflow Day Sheet Automation</h1>
+        <p class="app-subtitle" style="margin-bottom:0">Generate practitioner day sheets from a scheduling appointments report.</p>
+      </div>
+    </div>
+
+    <div class="workflow">
+      <div>
+        <label class="field-label" for="csvFile">1. Upload CSV of Appointments Report (≥6 months / 183 days including selected date)</label>
+        <input id="csvFile" type="file" accept=".csv,text/csv">
+        <div id="fileInfo" class="file-info"></div>
+      </div>
+      <div>
+        <label class="field-label" for="sheetDate">2. Day-sheet date</label>
+        <input id="sheetDate" type="date">
+      </div>
+    </div>
+
+    <div class="section-label">3. Practitioners to Distribute</div>
+    <div id="practitionerSetup" class="practitioner-box"><div class="empty-selector">Upload a Appointments Report first.</div></div>
+
+    <div id="coverageWarning" class="coverage-warning hidden"></div>
+    <div class="actions">
+      <button id="generateBtn" class="action primary" disabled>Generate Day Sheets</button>
+      <button id="printBtn" class="action secondary" disabled>Print</button>
+      <button id="clearBtn" class="action clear-danger" disabled>Clear Patient Data</button>
+    </div>
+    <div id="status" class="status"></div>
+  </section>
+</div>
+
+<section class="preview-wrap">
+  <div class="preview-heading"><h2>Preview</h2><span class="muted" style="font-size:12px">For the practitioner view, use Save PDF and open the saved PDF in a browser tab.</span></div>
+  <main id="output"><div class="preview-empty">Generate day sheets to see the print preview.</div></main>
+</section>
+
+<!-- Hidden workflow rules and CSV column detector for the portfolio build. -->
+<div class="hidden">
+  <div id="columnMapping"></div>
+  <div id="coverage"></div>
+  <div id="detectedStates"></div>
+  <input id="transferWindow" type="number" value="90">
+  <input id="defaultDuration" type="number" value="30">
+  <input id="allowedStates" type="text" value="booked, confirmed, arrived, checked in, checked-in">
+  <input id="blankStateAllowed" type="checkbox">
+  <input id="allowNoFuture" type="checkbox">
+  <textarea id="treatmentRules">sauna=SAUNA
+shockwave=MOD
+cold laser=MOD
+laser therapy=MOD
+laser=MOD
+orthotic=MOD
+3d scan=MOD
+massage=MT
+chiro=CHIRO
+physio=PHYSIO
+physical therapy=PHYSIO</textarea>
+</div>
+
+<script>
+'use strict';
+
+const $ = id => document.getElementById(id);
+let rawRows = [];
+let headers = [];
+let practitionerConfig = {};
+
+const mappingFields = [
+  ['patientName', 'Patient/member full name', false],
+  ['patientFirst', 'Patient first name', false],
+  ['patientPreferred', 'Patient preferred name', false],
+  ['patientLast', 'Patient last name', false],
+  ['patientId', 'Patient number or ID', false],
+  ['date', 'Appointment date or date/time', true],
+  ['start', 'Start time or date/time', false],
+  ['end', 'End time or date/time', false],
+  ['duration', 'Duration / scheduled length', false],
+  ['practitioner', 'Practitioner / staff member', true],
+  ['treatment', 'Treatment / appointment type', true],
+  ['state', 'Appointment state / status', false]
+];
+
+const synonyms = {
+  patientName: ['patient full name','client full name','member full name','full name','patient name','client name','member name'],
+  patientFirst: ['patient first name','client first name','member first name','first name','firstname'],
+  patientPreferred: ['patient preferred name','client preferred name','member preferred name','preferred name','nickname'],
+  patientLast: ['patient last name','client last name','member last name','last name','lastname','surname'],
+  patientId: ['patient guid','client guid','member guid','patient number','client number','member number','patient id','client id','member id','patient #','client #','member #'],
+  date: ['appointment date','date of appointment','appointment date/time','appointment datetime','start date','date','start at','starts at','start datetime','start date time'],
+  start: ['start time','appointment time','time','start at','starts at','start','start datetime','start date time'],
+  end: ['end time','ends at','end','end datetime','end date time'],
+  duration: ['scheduled length','duration','length','appointment length','treatment length'],
+  practitioner: ['practitioner','staff member','provider','therapist','clinician','staff'],
+  treatment: ['treatment','appointment type','treatment name','service','session'],
+  state: ['appointment state','booking status','appointment status','state','status']
+};
+
+function normalize(s) {
+  return String(s ?? '').trim().toLowerCase().replace(/[._-]+/g, ' ').replace(/\s+/g, ' ');
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+}
+
+function todayInputValue() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+$('sheetDate').value = todayInputValue();
+
+function detectDelimiter(text) {
+  const first = text.split(/\r?\n/).find(line => line.trim()) || '';
+  const candidates = [',','\t',';'];
+  let best = ',', bestCount = -1;
+  for (const d of candidates) {
+    const count = first.split(d).length - 1;
+    if (count > bestCount) { best = d; bestCount = count; }
+  }
+  return best;
+}
+
+function parseCSV(text) {
+  const delimiter = detectDelimiter(text);
+  const rows = [];
+  let row = [], cell = '', quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === '"' && text[i+1] === '"') { cell += '"'; i++; }
+      else if (ch === '"') quoted = false;
+      else cell += ch;
+    } else {
+      if (ch === '"') quoted = true;
+      else if (ch === delimiter) { row.push(cell); cell = ''; }
+      else if (ch === '\n') { row.push(cell.replace(/\r$/, '')); rows.push(row); row = []; cell = ''; }
+      else cell += ch;
+    }
+  }
+  if (cell.length || row.length) { row.push(cell.replace(/\r$/, '')); rows.push(row); }
+  while (rows.length && rows[rows.length-1].every(v => !String(v).trim())) rows.pop();
+  if (!rows.length) return {headers:[], rows:[]};
+  const hdrs = rows[0].map((h,i) => String(h).trim() || `Column ${i+1}`);
+  const objects = rows.slice(1).filter(r => r.some(v => String(v).trim())).map(r => {
+    const obj = {};
+    hdrs.forEach((h,i) => obj[h] = r[i] ?? '');
+    return obj;
+  });
+  return {headers: hdrs, rows: objects};
+}
+
+function removeUnneededSensitiveFields(rows) {
+  const drop = new Set([
+    'notes_text','insurance_state','referral_source','cancelled_reason','patient_prefix',
+    'chart_status','arrived_at','archived_at','no_show_at','cancelled_at','booked_online'
+  ]);
+  return rows.map(r => {
+    const out = {...r};
+    for (const h of Object.keys(out)) if (drop.has(normalize(h).replace(/ /g,'_'))) delete out[h];
+    return out;
+  });
+}
+
+function looksLikeIdValue(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return false;
+  return /^[A-Z]*\d[\d\-_.]*$/i.test(s) && !/[a-z]{2,}/i.test(s);
+}
+
+function idLikeRatio(header) {
+  const vals = rawRows.slice(0,100).map(r => r[header]).filter(v => String(v ?? '').trim());
+  if (!vals.length) return 0;
+  return vals.filter(looksLikeIdValue).length / vals.length;
+}
+
+function nameLikeRatio(header) {
+  const vals = rawRows.slice(0,100).map(r => String(r[header] ?? '').trim()).filter(Boolean);
+  if (!vals.length) return 0;
+  return vals.filter(v => /[A-Za-z]/.test(v) && !looksLikeIdValue(v)).length / vals.length;
+}
+
+function bestHeader(field) {
+  let best = '', bestScore = -9999;
+  for (const h of headers) {
+    const nh = normalize(h);
+    let score = 0;
+    for (const alias of (synonyms[field] || [])) {
+      const na = normalize(alias);
+      if (nh === na) score = Math.max(score, 120 + na.length);
+      else if (nh.includes(na)) score = Math.max(score, 70 + na.length);
+    }
+
+    if (field === 'patientName') {
+      if (/\b(staff|practitioner|provider|therapist|clinician|doctor|employee)\b/.test(nh)) score -= 500;
+      if (/\b(id|guid|number|no|identifier)\b/.test(nh) || h.includes('#')) score -= 220;
+      if (/\b(patient|client|member)\b/.test(nh) && /name/.test(nh)) score += 55;
+      if (/\bfull\b/.test(nh) && /name/.test(nh)) score += 50;
+      score += nameLikeRatio(h) * 25;
+      score -= idLikeRatio(h) * 140;
+    }
+    if (field === 'patientFirst') {
+      if (/\bpatient\b/.test(nh) && /\bfirst\b/.test(nh) && /name/.test(nh)) score += 90;
+      else if (/first/.test(nh) && /name/.test(nh)) score += 55;
+      if (/staff|practitioner|preferred|last|surname|id|guid|number/.test(nh)) score -= 160;
+    }
+    if (field === 'patientPreferred') {
+      if (/\bpatient\b/.test(nh) && /preferred/.test(nh) && /name/.test(nh)) score += 100;
+      else if (/preferred/.test(nh) && /name/.test(nh)) score += 65;
+      if (/staff|practitioner|first|last|surname|id|guid|number/.test(nh)) score -= 160;
+    }
+    if (field === 'patientLast') {
+      if (/\bpatient\b/.test(nh) && /(last|surname)/.test(nh)) score += 90;
+      else if (/(last|surname)/.test(nh)) score += 55;
+      if (/staff|practitioner|first|preferred|id|guid|number/.test(nh)) score -= 160;
+    }
+    if (field === 'patientId') {
+      if (/(patient|client|member)/.test(nh) && /(guid|id|number|no|#)/.test(nh)) score += 90;
+      if (/guid/.test(nh)) score += 35;
+      score += idLikeRatio(h) * 70;
+      if (/staff|practitioner/.test(nh)) score -= 250;
+      if (/name/.test(nh) && !/(id|guid|number)/.test(nh)) score -= 120;
+    }
+    if (field === 'date' && /booking date|created|cancel/.test(nh)) score -= 100;
+    if (field === 'start' && /date/.test(nh) && !/time|datetime/.test(nh)) score -= 20;
+
+    if (score > bestScore) { bestScore = score; best = h; }
+  }
+  return bestScore >= 45 ? best : '';
+}
+
+function renderColumnMapping() {
+  const saved = {}; // Portfolio build uses automatic column detection.
+  $('columnMapping').classList.remove('muted');
+  $('columnMapping').innerHTML = mappingFields.map(([key,label,required]) => {
+    let chosen = headers.includes(saved[key]) ? saved[key] : bestHeader(key);
+    const nChosen = normalize(chosen);
+    // Exact mappings for the standard Appointments Report export. These take priority over fuzzy matching.
+    const janeExact = {
+      patientFirst: 'patient_first_name', patientPreferred: 'patient_preferred_name', patientLast: 'patient_last_name',
+      patientId: 'patient_guid', date: 'start_at', start: 'start_at', end: 'end_at',
+      practitioner: 'staff_member_name', treatment: 'treatment_name', state: 'state'
+    };
+    if (janeExact[key] && headers.includes(janeExact[key])) chosen = janeExact[key];
+    if (key === 'patientName' && /\b(staff|practitioner|provider|therapist|clinician|doctor|employee)\b/.test(nChosen)) chosen = '';
+    // the standard appointment export has split patient-name columns. Prefer those over guessing a full-name field.
+    if (key === 'patientFirst' && headers.includes('patient_first_name')) chosen = 'patient_first_name';
+    if (key === 'patientPreferred' && headers.includes('patient_preferred_name')) chosen = 'patient_preferred_name';
+    if (key === 'patientLast' && headers.includes('patient_last_name')) chosen = 'patient_last_name';
+    if (key === 'patientId' && headers.includes('patient_guid')) chosen = 'patient_guid';
+    if (key === 'patientName' && headers.includes('patient_first_name') && headers.includes('patient_last_name')) chosen = '';
+    return `<div><label for="map_${key}">${escapeHtml(label)}${required ? ' *' : ''}</label><select id="map_${key}"><option value="">Not available</option>${headers.map(h => `<option value="${escapeHtml(h)}" ${h===chosen?'selected':''}>${escapeHtml(h)}</option>`).join('')}</select></div>`;
+  }).join('');
+  mappingFields.forEach(([key]) => $('map_'+key).addEventListener('change', () => {
+    saveSettings();
+    if (key === 'practitioner' || key === 'treatment') renderPractitionerSetup();
+    updateFileInfo();
+  }));
+}
+
+function getMapping() {
+  const m = {};
+  mappingFields.forEach(([key]) => m[key] = $('map_'+key)?.value || '');
+  return m;
+}
+
+const forcedPractitionerDefaults = {
+  'dr maya chen': {profession: 'CHIRO', initials: 'MC', shortName: 'Dr. Maya', displayName: 'Dr. Maya Chen', email: 'maya.chen@example.com'},
+  'dr noah singh': {profession: 'CHIRO', initials: 'NS', shortName: 'Dr. Noah', displayName: 'Dr. Noah Singh', email: 'noah.singh@example.com'},
+  'ms sofia martinez': {profession: 'MT', initials: 'SM', shortName: 'Sofia', displayName: 'Ms. Sofia Martinez', email: 'sofia.martinez@example.com'},
+  'mr liam parker': {profession: 'PHYSIO', initials: 'LP', shortName: 'Liam', displayName: 'Mr. Liam Parker', email: 'liam.parker@example.com'},
+  'alex rivera': {profession: 'MOD', initials: 'AR', shortName: 'Alex', displayName: 'Alex Rivera', email: 'alex.rivera@example.com'}
+};
+
+function practitionerNameWords(name) {
+  const titleWords = /^(?:dr|doctor|mr|mister|mrs|missus|ms|miss|mx|prof|professor)\.?$/i;
+  return String(name).trim().split(/\s+/).filter(Boolean).filter(w => !titleWords.test(w));
+}
+
+function forcedPractitioner(name) {
+  return forcedPractitionerDefaults[normalize(name)] || {};
+}
+
+function guessInitials(name) {
+  const forced = forcedPractitioner(name);
+  if (forced.initials) return forced.initials;
+  const words = practitionerNameWords(name);
+  if (!words.length) return 'NA';
+  const first = words[0]?.[0]?.toUpperCase() || '';
+  const last = words.length > 1 ? (words[words.length-1]?.[0]?.toUpperCase() || '') : '';
+  return (first + last) || 'NA';
+}
+
+function guessShortName(name) {
+  const forced = forcedPractitioner(name);
+  if (forced.shortName) return forced.shortName;
+  const original = String(name).trim();
+  const words = practitionerNameWords(original);
+  const first = words[0] || original;
+  if (/^(?:dr|doctor)\.?\s+/i.test(original)) return `Dr. ${first}`;
+  return first;
+}
+
+function practitionerProfessionCodeForLabel(profession) {
+  const p = String(profession || '').toUpperCase();
+  if (p === 'PHYSIO' || p === 'PT') return 'PT';
+  if (p === 'MT') return 'MT';
+  if (p === 'CHIRO') return 'CH';
+  if (p === 'MOD' || p === 'ALM') return 'ALM';
+  return p;
+}
+
+function transferPractitionerLabel(name, cfg) {
+  const display = cfg?.[name]?.displayName || name;
+  const words = practitionerNameWords(display);
+  if (!words.length) return String(name || '').trim();
+  return words[0];
+}
+
+function practitionerFirstNameDisplay(name, cfg) {
+  const display = cfg?.[name]?.displayName || name;
+  const words = practitionerNameWords(display);
+  return words[0] || String(name || '').trim();
+}
+
+function canonicalProfessionCode(code) {
+  const p = String(code || '').toUpperCase();
+  if (p === 'PHYSIO' || p === 'PT') return 'PT';
+  if (p === 'CHIRO' || p === 'CH') return 'CH';
+  if (p === 'MT') return 'MT';
+  if (p === 'MOD' || p === 'ALM') return 'ALM';
+  if (p === 'SAUNA') return 'SAUNA';
+  return p || 'OTHER';
+}
+
+function professionMatches(a, code) {
+  const wanted = canonicalProfessionCode(code);
+  const actual = canonicalProfessionCode(a?.profession);
+  if (wanted === 'ALM') return actual === 'ALM' || actual === 'SAUNA';
+  return actual === wanted;
+}
+
+function appointmentColumnCodes(scheduleProfession) {
+  const current = canonicalProfessionCode(scheduleProfession);
+  if (current === 'CH') return ['CH','MT','PT','ALM'];
+  if (current === 'MT') return ['MT','CH','PT','ALM'];
+  if (current === 'PT') return ['PT','CH','MT','ALM'];
+  if (current === 'ALM') return ['ALM','CH','MT','PT'];
+  return [current || 'CH','CH','MT','PT'].filter((v,i,a) => v && a.indexOf(v) === i).slice(0,4);
+}
+
+function nextHeaderLabel(code) {
+  const c = canonicalProfessionCode(code);
+  return `Next ${c}`;
+}
+
+function formatTimeOnly(d) {
+  const h12 = d.getHours() % 12 || 12;
+  const suffix = d.getHours() >= 12 ? 'pm' : 'am';
+  return `${h12}:${String(d.getMinutes()).padStart(2,'0')} ${suffix}`;
+}
+
+function practitionerTagCandidates(practitioner) {
+  const vals = new Set();
+  const forced = forcedPractitioner(practitioner);
+  const candidates = [practitioner, forced.displayName, forced.shortName].filter(Boolean);
+  for (const candidate of candidates) {
+    const words = practitionerNameWords(candidate);
+    if (!words.length) continue;
+    vals.add(normalize(words[0]));
+    vals.add(normalize(words.join(' ')));
+    if (words.length > 1) vals.add(normalize(`${words[0]} ${words[words.length-1][0] || ''}`));
+  }
+  return vals;
+}
+
+function extractPractitionerTaggedNote(noteText, practitioner) {
+  const text = String(noteText || '').trim();
+  if (!text) return '';
+  const tags = practitionerTagCandidates(practitioner);
+  if (!tags.size) return '';
+
+  // Appointment notes may use tags such as "[Alyan] note" without a colon.
+  // Keep ONLY the text immediately following a matching practitioner tag,
+  // stopping as soon as the next bracketed tag begins. This prevents
+  // unrelated [Insurance], [Admin], [Package], or other practitioner notes
+  // from being copied into the day sheet.
+  const parts = [];
+  const re = /\[([^\]]+)\]\s*:?[ \t]*([\s\S]*?)(?=\s*\[[^\]]+\]|$)/g;
+  let m;
+  while ((m = re.exec(text))) {
+    const tag = normalize(m[1]);
+    if (!tags.has(tag)) continue;
+    const body = String(m[2] || '').replace(/\s+/g,' ').trim();
+    if (body && !parts.includes(body)) parts.push(body);
+  }
+  return parts.join('; ');
+}
+
+function parseTreatmentRules() {
+  return $('treatmentRules').value.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => {
+    const idx = line.indexOf('=');
+    if (idx < 1) return null;
+    return {keyword: normalize(line.slice(0,idx)), profession: line.slice(idx+1).trim().toUpperCase()};
+  }).filter(Boolean).sort((a,b) => b.keyword.length-a.keyword.length);
+}
+
+function inferProfessionForPractitioner(name, mapping) {
+  const rules = parseTreatmentRules();
+  const rows = rawRows.filter(r => normalize(r[mapping.practitioner]) === normalize(name));
+  const counts = new Map();
+  for (const r of rows) {
+    const t = normalize(r[mapping.treatment]);
+    for (const rule of rules) {
+      if (t.includes(rule.keyword)) counts.set(rule.profession, (counts.get(rule.profession)||0)+1);
+    }
+  }
+  if (counts.size) return [...counts.entries()].sort((a,b) => b[1]-a[1])[0][0];
+  return 'OTHER';
+}
+
+
+function isSaunaPractitioner(name, config) {
+  const profession = String(config?.profession || '').toUpperCase();
+  const n = normalize(name);
+  return profession === 'SAUNA' || n.includes('sauna') || n.includes('red light therapy');
+}
+
+function professionDisplay(code) {
+  const c = String(code || '').toUpperCase();
+  return ({CHIRO:'Chiro', CH:'Chiro', MT:'Massage', PHYSIO:'PT', PT:'PT', MOD:'ALM', ALM:'ALM'})[c] || c || '';
+}
+
+function professionSortRank(code) {
+  const c = canonicalProfessionCode(code);
+  return ({CH:0, PT:1, MT:2, ALM:3})[c] ?? 9;
+}
+
+function comparePractitionersByProfession(a, b, cfg) {
+  const ra = professionSortRank(cfg?.[a]?.profession);
+  const rb = professionSortRank(cfg?.[b]?.profession);
+  if (ra !== rb) return ra - rb;
+  const da = cfg?.[a]?.displayName || a;
+  const db = cfg?.[b]?.displayName || b;
+  return da.localeCompare(db, undefined, {sensitivity:'base'});
+}
+
+function renderPractitionerSetup() {
+  const m = getMapping();
+  if (!m.practitioner) return;
+
+  const allNames = [...new Set(rawRows.map(r => String(r[m.practitioner] || '').trim()).filter(Boolean))].sort();
+  practitionerConfig = {};
+  for (const name of allNames) {
+    const forced = forcedPractitioner(name);
+    practitionerConfig[name] = {
+      print: true,
+      profession: forced.profession || inferProfessionForPractitioner(name,m),
+      initials: forced.initials || guessInitials(name),
+      shortName: forced.shortName || guessShortName(name),
+      displayName: forced.displayName || name,
+      email: forced.email || ''
+    };
+  }
+
+  const selectedDate = $('sheetDate').value;
+  const todaysNames = new Set();
+  if (selectedDate && m.date) {
+    for (const r of rawRows) {
+      const d = parseDateTime(r[m.date], m.start ? r[m.start] : r[m.date]);
+      const state = m.state ? String(r[m.state] || '').trim() : '';
+      if (d && localDateKey(d) === selectedDate && isActiveState(state)) {
+        const name = String(r[m.practitioner] || '').trim();
+        if (name && !isSaunaPractitioner(name, practitionerConfig[name])) todaysNames.add(name);
+      }
+    }
+  }
+
+  const names = allNames.filter(name => todaysNames.has(name)).sort((a,b) => comparePractitionersByProfession(a,b,practitionerConfig));
+  $('practitionerSetup').classList.remove('muted');
+
+  if (!rawRows.length) {
+    $('practitionerSetup').innerHTML = '<div class="empty-selector">Upload a Appointments Report first.</div>';
+    return;
+  }
+  if (!selectedDate) {
+    $('practitionerSetup').innerHTML = '<div class="empty-selector">Choose a date.</div>';
+    return;
+  }
+  if (!names.length) {
+    $('practitionerSetup').innerHTML = '<div class="empty-selector">No practitioner day sheets are available for this date.</div>';
+    return;
+  }
+
+  $('practitionerSetup').innerHTML = `
+    <div class="selector-topline">
+      <span>${names.length} practitioner${names.length === 1 ? '' : 's'} available</span>
+      <span class="selector-buttons"><button type="button" class="link-button" id="selectAllPractitioners">Select all</button><button type="button" class="link-button" id="selectNoPractitioners">Select none</button><button type="button" class="link-button" id="selectAllCH">All CH</button><button type="button" class="link-button" id="selectAllPT">All PT</button><button type="button" class="link-button" id="selectAllMT">All MT</button></span>
+    </div>
+    <div class="practitioner-grid">${names.map(name => {
+      const c = practitionerConfig[name];
+      return `<label class="practitioner-option"><input type="checkbox" class="pc-print" data-practitioner="${escapeHtml(name)}" checked><span><strong>${escapeHtml(c.displayName)}</strong><small>${escapeHtml(professionDisplay(c.profession))}</small></span></label>`;
+    }).join('')}</div>`;
+
+  $('selectAllPractitioners').addEventListener('click', () => {
+    $('practitionerSetup').querySelectorAll('.pc-print').forEach(cb => cb.checked = true);
+  });
+  $('selectNoPractitioners').addEventListener('click', () => {
+    $('practitionerSetup').querySelectorAll('.pc-print').forEach(cb => cb.checked = false);
+  });
+  const selectProfessionOnly = code => {
+    $('practitionerSetup').querySelectorAll('.pc-print').forEach(cb => {
+      const name = cb.dataset.practitioner;
+      cb.checked = canonicalProfessionCode(practitionerConfig?.[name]?.profession) === code;
+    });
+  };
+  $('selectAllCH').addEventListener('click', () => selectProfessionOnly('CH'));
+  $('selectAllPT').addEventListener('click', () => selectProfessionOnly('PT'));
+  $('selectAllMT').addEventListener('click', () => selectProfessionOnly('MT'));
+}
+
+function readPractitionerConfig() {
+  const cfg = {...practitionerConfig};
+  // Practitioners available on the selected date are controlled by the visible checkboxes.
+  $('practitionerSetup').querySelectorAll('.pc-print').forEach(cb => {
+    const name = cb.dataset.practitioner;
+    if (cfg[name]) cfg[name].print = cb.checked;
+  });
+  practitionerConfig = cfg;
+  return cfg;
+}
+
+function saveSettings() { /* Portfolio build uses fixed workflow rules; no settings are stored. */ }
+function loadSettings() { /* No persistent patient or configuration data. */ }
+
+function parseDateOnly(value) {
+  if (value == null || value === '') return null;
+  if (typeof value === 'number' || /^\d+(\.\d+)?$/.test(String(value).trim())) {
+    const n = Number(value);
+    if (n > 20000 && n < 100000) {
+      const ms = Math.round((n - 25569) * 86400 * 1000);
+      const d = new Date(ms);
+      return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+    }
+  }
+  const s = String(value).trim();
+  let m;
+  if ((m = s.match(/^(\d{4})[-\/]([01]?\d)[-\/]([0-3]?\d)/))) return new Date(+m[1], +m[2]-1, +m[3]);
+  if ((m = s.match(/^([01]?\d)[-\/]([0-3]?\d)[-\/](\d{4})/))) return new Date(+m[3], +m[1]-1, +m[2]);
+  const d = new Date(s);
+  if (!isNaN(d)) return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  return null;
+}
+
+function parseTimeParts(value) {
+  if (value == null || value === '') return null;
+  const s = String(value).trim();
+  const m = s.match(/(?:^|\s)(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
+  if (!m) return null;
+  let h = +m[1], min = +m[2], sec = +(m[3] || 0);
+  const ap = (m[4] || '').toUpperCase();
+  if (ap === 'PM' && h < 12) h += 12;
+  if (ap === 'AM' && h === 12) h = 0;
+  return {h,min,sec};
+}
+
+function parseDateTime(dateValue, timeValue) {
+  let date = parseDateOnly(dateValue);
+  if (!date && timeValue) date = parseDateOnly(timeValue);
+  if (!date) return null;
+  const tp = parseTimeParts(timeValue) || parseTimeParts(dateValue) || {h:0,min:0,sec:0};
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), tp.h, tp.min, tp.sec);
+}
+
+function parseDurationMinutes(value) {
+  if (value == null || value === '') return null;
+  const s = String(value).trim();
+  if (/^\d+(\.\d+)?$/.test(s)) return Number(s);
+  let m = s.match(/(\d+)\s*(?:min|minute)/i);
+  if (m) return +m[1];
+  m = s.match(/(\d+)\s*(?:h|hour)/i);
+  const hours = m ? +m[1] : 0;
+  m = s.match(/(\d+)\s*(?:m|min|minute)/i);
+  const mins = m ? +m[1] : 0;
+  if (hours || mins) return hours*60+mins;
+  m = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (m) return +m[1]*60 + +m[2];
+  return null;
+}
+
+function localDateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function isActiveState(state) {
+  const s = normalize(state);
+  // Never count these Jane states, even if a custom allowed word would otherwise match.
+  if (/cancel|resched|no show|never booked|archiv|deleted/.test(s)) return false;
+  if (!s) return $('blankStateAllowed').checked;
+  const tokens = $('allowedStates').value.split(',').map(normalize).filter(Boolean);
+  return tokens.some(t => s === t || s.includes(t));
+}
+
+function classifyProfession(row, mapping, rules, cfg) {
+  const treatment = normalize(row[mapping.treatment]);
+  for (const rule of rules) if (treatment.includes(rule.keyword)) return rule.profession;
+  const practitioner = String(row[mapping.practitioner] || '').trim();
+  return cfg[practitioner]?.profession || 'OTHER';
+}
+
+function cleanPatientNamePart(value) {
+  // Keep readable name characters only. Internal Jane symbols/emojis are omitted from day sheets.
+  return String(value ?? '')
+    .replace(/\*/g, '')
+    .replace(/[^\p{L}\p{N}\s.'’\-]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function lastInitialDisplay(value) {
+  const cleaned = cleanPatientNamePart(value);
+  if (!cleaned) return '';
+  const letter = cleaned.match(/\p{L}/u)?.[0] || cleaned.charAt(0);
+  return letter ? letter.toUpperCase() : '';
+}
+
+function shortenFullPatientName(value) {
+  const cleaned = cleanPatientNamePart(value);
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return cleaned;
+  const last = parts.pop();
+  return [...parts, lastInitialDisplay(last)].filter(Boolean).join(' ');
+}
+
+function patientDisplayName(row, mapping) {
+  let full = mapping.patientName ? cleanPatientNamePart(row[mapping.patientName]) : '';
+  const first = mapping.patientFirst ? cleanPatientNamePart(row[mapping.patientFirst]) : '';
+  const preferred = mapping.patientPreferred ? cleanPatientNamePart(row[mapping.patientPreferred]) : '';
+  const last = mapping.patientLast ? String(row[mapping.patientLast] || '').trim() : '';
+  const chosenFirst = preferred || first;
+  const combined = [chosenFirst, lastInitialDisplay(last)].filter(Boolean).join(' ').trim();
+
+  const practitionerValue = mapping.practitioner ? String(row[mapping.practitioner] || '').trim() : '';
+  const unsafeFull = !full || looksLikeIdValue(full) ||
+    (practitionerValue && normalize(full) === normalize(practitionerValue)) ||
+    /\b(staff|practitioner|provider)\b/.test(normalize(mapping.patientName));
+
+  if (combined && !looksLikeIdValue(combined)) full = combined;
+  else if (!unsafeFull) full = shortenFullPatientName(full);
+  return cleanPatientNamePart(full);
+}
+
+function appointmentMarkerInfo(treatment) {
+  const raw = String(treatment ?? '').trim();
+  const t = normalize(raw);
+  if (!t) return {stage:'', special:'', pe:false, pr:false, phase:''};
+
+  // Jane treatment names sometimes contain the phase in parentheses.
+  let phase = '';
+  if (/\bphase\s*2\s*\/\s*3\b/i.test(raw) || /\bphase\s*2\s*3\b/.test(t)) phase = 'Phase 2/3';
+  else if (/\bphase\s*1\b/.test(t)) phase = 'Phase 1';
+  else if (/\bphase\s*2\b/.test(t)) phase = 'Phase 2';
+  else if (/\bphase\s*3\b/.test(t)) phase = 'Phase 3';
+
+  const pe = /\bprogress exam\b/.test(t) || /(?:^|\s)pe(?:\s|$)/.test(t);
+  const pr = /\bprogress report\b/.test(t) || /(?:^|\s)pr(?:\s|$)/.test(t) || (/\bprogress exam\b/.test(t) && /\breport\b/.test(t));
+
+  // Re-assessments need their own labels rather than being mistaken for a normal Day 1 IA.
+  const isReAx = /\bre\s*assessment\b/.test(t) || /\breassessment\b/.test(t);
+  let special = '';
+  let stage = '';
+
+  if (isReAx) {
+    if (/3\s*11\s*months?/.test(t)) special = '3-11 Month Re-Ax';
+    else if ((/[≥>=]\s*12/i.test(raw) || /12\s*months?/.test(t)) && !/>\s*3/i.test(raw)) special = '≥12 Month Re-Ax';
+    else if (/>\s*3\s*months?/i.test(raw) || /3\s*months?/.test(t)) special = '>3 Month Re-Ax';
+    else special = 'Re-Ax';
+
+    if (/\bday\s*1\b/.test(t)) stage = 'Day 1';
+    else if (/\bday\s*2\b/.test(t)) stage = 'Day 2';
+    else if (/\bday\s*3\b/.test(t)) stage = 'Day 3';
+  } else {
+    if (/\bday\s*1\b/.test(t) || /\binitial assessment\b/.test(t) || /\binitial therapeutic massage\b/.test(t)) stage = 'Day 1 IA';
+    else if (/\bday\s*2\b/.test(t)) stage = 'Day 2';
+    else if (/\bday\s*3\b/.test(t)) stage = 'Day 3';
+  }
+
+  return {stage, special, pe, pr, phase};
+}
+
+function appointmentMarker(treatment) {
+  const info = appointmentMarkerInfo(treatment);
+  const parts = [];
+
+  if (info.special) {
+    parts.push([info.special, info.stage].filter(Boolean).join(' '));
+  } else if (info.stage) {
+    parts.push(info.stage);
+  }
+
+  let progress = '';
+  if (info.pe && info.pr) progress = 'PE/PR';
+  else if (info.pe) progress = 'PE';
+  else if (info.pr) progress = 'PR';
+  if (progress && info.phase) progress += ` (${info.phase})`;
+  if (progress) parts.push(progress);
+
+  return parts.join(' - ');
+}
+
+function todayAppointmentNote(a) {
+  const info = a.markerInfo || appointmentMarkerInfo(a.treatment);
+  const parts = [];
+  if (isComplimentaryAppointment(a)) parts.push('Comp');
+
+  // Show special appointment types for Chiro, PT and MT.
+  const clinical = ['CH','PT','MT'].includes(canonicalProfessionCode(a.profession)) ||
+                   ['CHIRO','PHYSIO','PT','MT','MASSAGE'].includes(a.profession);
+  if (clinical) {
+    if (info.special) parts.push([info.special, info.stage].filter(Boolean).join(' '));
+    else if (info.stage) parts.push(info.stage);
+  }
+
+  let progress = '';
+  if (info.pe && info.pr) progress = 'PE/PR';
+  else if (info.pe) progress = 'PE';
+  else if (info.pr) progress = 'PR';
+  if (progress && info.phase) progress += ` (${info.phase})`;
+  if (progress) parts.push(`${progress} Today`);
+
+  return parts.join('; ');
+}
+
+function convertRows() {
+  const mapping = getMapping();
+  const missing = mappingFields.filter(([k,,req]) => req && !mapping[k]).map(([,label]) => label);
+  if (missing.length) throw new Error('Map these required columns: ' + missing.join(', '));
+  if (!mapping.patientName && !(mapping.patientFirst || mapping.patientLast)) {
+    throw new Error('Map the patient name. For a standard Jane export, use patient_first_name + patient_preferred_name + patient_last_name.');
+  }
+  if (mapping.patientName && mapping.practitioner && mapping.patientName === mapping.practitioner && !(mapping.patientFirst || mapping.patientLast)) {
+    throw new Error('Patient name is mapped to the practitioner/staff column. Map patient_first_name and patient_last_name instead.');
+  }
+  const rules = parseTreatmentRules();
+  const cfg = readPractitionerConfig();
+  const defaultDuration = Number($('defaultDuration').value) || 30;
+
+  const converted = rawRows.map((r,index) => {
+    const start = parseDateTime(r[mapping.date], mapping.start ? r[mapping.start] : r[mapping.date]);
+    if (!start) return null;
+    let end = mapping.end ? parseDateTime(r[mapping.date], r[mapping.end]) : null;
+    if (end && end < start) end = new Date(end.getTime()+86400000);
+    if (!end) {
+      const duration = mapping.duration ? parseDurationMinutes(r[mapping.duration]) : null;
+      end = new Date(start.getTime() + (duration || defaultDuration)*60000);
+    }
+    const patientName = patientDisplayName(r,mapping);
+    const rawPatientId = mapping.patientId ? String(r[mapping.patientId] || '').trim() : '';
+    const patientId = [mapping.patientName, mapping.patientFirst, mapping.patientPreferred, mapping.patientLast, mapping.practitioner].includes(mapping.patientId) ? '' : rawPatientId;
+    const practitioner = String(r[mapping.practitioner] || '').trim();
+    const treatment = String(r[mapping.treatment] || '').trim();
+    const state = mapping.state ? String(r[mapping.state] || '').trim() : '';
+    const patientIdentityKeys = patientStaffIdentityKeys(r, mapping);
+    return {
+      sourceIndex:index,
+      patientName,
+      patientIdentityKeys,
+      patientKey: patientId ? `id:${patientId}` : `name:${normalize(patientName)}`,
+      practitioner,
+      treatment,
+      marker: appointmentMarker(treatment),
+      markerInfo: appointmentMarkerInfo(treatment),
+      state,
+      start,
+      end,
+      dateKey: localDateKey(start),
+      profession: classifyProfession(r,mapping,rules,cfg),
+      practitionerNote: String(r.__practitioner_note || '').trim(),
+      active: isActiveState(state)
+    };
+  }).filter(r => r && r.patientName && r.practitioner);
+
+  const staffKeys = clinicStaffIdentityKeys(cfg);
+  converted.forEach(a => {
+    a.staffComp = isComplimentaryAppointment(a) && (a.patientIdentityKeys || []).some(k => staffKeys.has(k));
+  });
+
+  const seen = new Set();
+  const deduped = converted.filter(a => {
+    const key = [a.patientKey,a.start.getTime(),normalize(a.practitioner),normalize(a.treatment),normalize(a.state)].join('|');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  return mergeMvaDoubleBookings(deduped);
+}
+
+function isMvaAppointment(a) {
+  return /\bmva\b/.test(normalize(a?.treatment));
+}
+
+function mergeMvaDoubleBookings(appointments) {
+  // A scheduling export can split one MVA clinical visit into multiple billing rows.
+  // For Chiro and PT, treat adjacent OR overlapping MVA rows for the same patient,
+  // practitioner, profession and day as ONE clinical visit, even when the MVA
+  // treatment names differ (for example Protocol + AB4/Progress Exam).
+  const sorted = [...appointments].sort((a,b) => a.start-b.start || a.end-b.end);
+  const result = [];
+  const lastByKey = new Map();
+
+  for (const a of sorted) {
+    const mergeableProfession = a.profession === 'CHIRO' || a.profession === 'PHYSIO' || a.profession === 'PT';
+    if (!a.active || !mergeableProfession || !isMvaAppointment(a)) {
+      result.push(a);
+      continue;
+    }
+
+    const key = [a.patientKey, normalize(a.practitioner), a.dateKey, a.profession].join('|');
+    const previous = lastByKey.get(key);
+    // Financial double-bookings are adjacent or overlapping. Do not merge separate visits later that day.
+    const gapMinutes = previous ? (a.start.getTime() - previous.end.getTime()) / 60000 : Infinity;
+    // Merge contiguous billing rows and ANY overlap. The export may split one MVA
+    // clinical visit into adjacent rows or overlapping/double-booked rows.
+    if (previous && gapMinutes <= 1) {
+      if (a.start < previous.start) previous.start = a.start;
+      if (a.end > previous.end) previous.end = a.end;
+      previous.sourceIndices = [...(previous.sourceIndices || [previous.sourceIndex]), a.sourceIndex];
+
+      // Preserve any special appointment information carried by either billing row.
+      if (!normalize(previous.treatment).includes(normalize(a.treatment))) {
+        previous.treatment = `${previous.treatment} / ${a.treatment}`;
+      }
+      previous.markerInfo = appointmentMarkerInfo(previous.treatment);
+      previous.marker = appointmentMarker(previous.treatment);
+      if (a.practitionerNote && !previous.practitionerNote.includes(a.practitionerNote)) {
+        previous.practitionerNote = [previous.practitionerNote, a.practitionerNote].filter(Boolean).join('; ');
+      }
+      continue;
+    }
+
+    const copy = {...a, sourceIndices:[a.sourceIndex]};
+    result.push(copy);
+    lastByKey.set(key, copy);
+  }
+  return result.sort((a,b) => a.start-b.start || a.end-b.end);
+}
+
+const monthCodes = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function formatAppointmentDate(d) {
+  // Compact clinic day codes: M, Tue, W, Thu, F, Sat, S (Sunday).
+  const weekday = ['S','M','Tue','W','Thu','F','Sat'][d.getDay()];
+  const md = `${monthCodes[d.getMonth()]} ${d.getDate()}`;
+  const h12 = d.getHours() % 12 || 12;
+  const suffix = d.getHours() >= 12 ? 'pm' : 'am';
+  const time = `${h12}:${String(d.getMinutes()).padStart(2,'0')} ${suffix}`;
+  return `${weekday} / ${md} / ${time}`;
+}
+
+function sheetDateHeading(d) {
+  const weekday = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getDay()];
+  return `${weekday}, ${monthCodes[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
+function massageTreatmentMinutes(a) {
+  if (!a || a.profession !== 'MT') return null;
+  const m = String(a.treatment || '').match(/(\d+)\s*(?:minutes?|mins?|min)\b/i);
+  if (!m) return null;
+  const minutes = Number(m[1]);
+  return Number.isFinite(minutes) && minutes > 0 ? minutes : null;
+}
+
+function transferServiceEnd(a) {
+  // Scheduling systems may reserve an after-treatment buffer for massage. For transfers,
+  // use the duration stated in the treatment name when it is shorter than the
+  // scheduled block. Schedule-gap layout still uses the original a.end value.
+  const massageMinutes = massageTreatmentMinutes(a);
+  if (massageMinutes) {
+    const statedEnd = new Date(a.start.getTime() + massageMinutes * 60000);
+    if (statedEnd > a.start && statedEnd <= a.end) return statedEnd;
+  }
+  return a.end;
+}
+
+function modalityCode(treatment) {
+  const t = normalize(treatment);
+  if (t.includes('shockwave')) return 'SW';
+  if (t.includes('laser')) return 'LLLT';
+  if (t.includes('orthotic') || t.includes('3d scan')) return 'ORTHOTICS';
+  return 'MOD';
+}
+
+function appointmentProfessionLabel(a) {
+  if (a.profession === 'MOD') return modalityCode(a.treatment);
+  if (a.profession === 'PHYSIO' || a.profession === 'PT') return 'PT';
+  return a.profession;
+}
+
+function transferDetails(current, todays, cfg) {
+  const windowMinutes = Number($('transferWindow').value) || 90;
+  const candidates = todays.filter(other => {
+    if (other.sourceIndex === current.sourceIndex || other.patientKey !== current.patientKey) return false;
+    const differentPractitioner = normalize(other.practitioner) !== normalize(current.practitioner);
+    return differentPractitioner || other.profession === 'SAUNA';
+  });
+  if (!candidates.length) return [];
+
+  const currentEnd = transferServiceEnd(current);
+  const previousCandidates = [];
+  const nextCandidates = [];
+
+  for (const other of candidates) {
+    const otherEnd = transferServiceEnd(other);
+
+    // Previous handoff: appointment began before this one. The gap may be negative
+    // if the two appointments overlap slightly.
+    if (other.start < current.start) {
+      const gap = Math.round((current.start - otherEnd) / 60000);
+      if (Math.abs(gap) <= windowMinutes) previousCandidates.push({other, gap});
+    }
+
+    // Next handoff: appointment begins after this one begins. Compare its START
+    // with the end of the current clinical service. This intentionally allows
+    // negative transfers, e.g. a 7:00 massage after a PT visit ending 7:10 = -10 mins.
+    if (other.start > current.start) {
+      const gap = Math.round((other.start - currentEnd) / 60000);
+      if (Math.abs(gap) <= windowMinutes) nextCandidates.push({other, gap});
+    }
+  }
+
+  // Only show the immediately adjacent handoff before and after this practitioner.
+  // A later transfer belongs on the receiving practitioner's own day sheet.
+  previousCandidates.sort((a,b) => {
+    const aEnd = transferServiceEnd(a.other).getTime();
+    const bEnd = transferServiceEnd(b.other).getTime();
+    return bEnd - aEnd || b.other.start - a.other.start;
+  });
+  nextCandidates.sort((a,b) => a.other.start - b.other.start || a.gap - b.gap);
+
+  const results = [];
+  if (previousCandidates.length) {
+    const x = previousCandidates[0];
+    const sign = x.gap >= 0 ? '+' : '';
+    results.push({text:`From ${x.other.profession === 'SAUNA' ? 'SAUNA' : transferPractitionerLabel(x.other.practitioner, cfg)} ${sign}${x.gap} mins`, other:x.other});
+  }
+  if (nextCandidates.length) {
+    const x = nextCandidates[0];
+    const sign = x.gap >= 0 ? '+' : '';
+    results.push({text:`To ${x.other.profession === 'SAUNA' ? 'SAUNA' : transferPractitionerLabel(x.other.practitioner, cfg)} ${sign}${x.gap} mins`, other:x.other});
+  }
+
+  return results;
+}
+
+function futureAppointments(current, all, sheetDateKey) {
+  return all.filter(a => a.active && a.patientKey === current.patientKey && a.dateKey > sheetDateKey).sort((a,b) => a.start-b.start);
+}
+
+function appointmentCellText(n, current, cfg, alwaysShowPractitioner=false) {
+  if (!n) return '';
+  const marker = n.marker ? ` - ${n.marker}` : '';
+  const code = canonicalProfessionCode(n.profession);
+  const servicePrefix = code === 'ALM' ? `${appointmentProfessionLabel(n)} ` : code === 'SAUNA' ? 'SAUNA ' : '';
+  const differentPractitioner = normalize(n.practitioner) !== normalize(current.practitioner);
+  let practitionerText = '';
+  if (code !== 'SAUNA') {
+    if (alwaysShowPractitioner) practitionerText = ` - ${transferPractitionerLabel(n.practitioner, cfg)}`;
+    else if (differentPractitioner) practitionerText = ` - with ${transferPractitionerLabel(n.practitioner, cfg)}`;
+  }
+  return `${servicePrefix}${formatAppointmentDate(n.start)}${marker}${practitionerText}`;
+}
+
+function nextProfessionText(current, all, sheetDateKey, cfg, code, ownColumn=false) {
+  const n = futureAppointments(current,all,sheetDateKey).find(a => professionMatches(a, code));
+  return appointmentCellText(n, current, cfg, !ownColumn);
+}
+
+function nextSameProfessionText(current, all, sheetDateKey, cfg) {
+  return nextProfessionText(current, all, sheetDateKey, cfg, canonicalProfessionCode(current.profession), true);
+}
+
+function nextOtherProfessionText(current, all, sheetDateKey, cfg, code) {
+  return nextProfessionText(current, all, sheetDateKey, cfg, code, false);
+}
+
+function formatShortDate(d) {
+  return `${monthCodes[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
+function autoChooseSheetDate() {
+  // Portfolio build keeps the selected date unchanged.
+  // The date field defaults to the computer's current local day.
+}
+
+function updateFileInfo() {
+  if (!rawRows.length) { $('fileInfo').textContent = ''; return; }
+  const m = getMapping();
+  if (!m.date) { $('fileInfo').textContent = 'The appointment date column could not be detected.'; return; }
+  const dates = rawRows.map(r => parseDateTime(r[m.date], m.start ? r[m.start] : r[m.date])).filter(Boolean).sort((a,b)=>a-b);
+  if (!dates.length) { $('fileInfo').textContent = 'No appointment dates could be read from this file.'; return; }
+  const min = dates[0], max = dates[dates.length-1];
+  $('fileInfo').textContent = `${rawRows.length.toLocaleString()} appointment rows loaded • ${formatShortDate(min)} to ${formatShortDate(max)}`;
+}
+
+
+function reportCoverageStatus() {
+  if (!rawRows.length) return {ok:false, message:''};
+  const m = getMapping();
+  const selected = parseDateOnly($('sheetDate').value);
+  if (!m.date || !selected) return {ok:false, message:''};
+  const dates = rawRows.map(r => parseDateTime(r[m.date], m.start ? r[m.start] : r[m.date])).filter(Boolean);
+  if (!dates.length) return {ok:false, message:'No appointment dates could be read from this report.'};
+  const max = dates.reduce((a,b) => a>b?a:b);
+  const required = new Date(selected.getTime() + 182 * 86400000); // 183 calendar days including the selected day
+  if (max < required) {
+    return {ok:false, message:`Report is too short. It ends ${formatShortDate(max)}. Export a Appointments Report covering at least 183 days including the day-sheet date (through ${formatShortDate(required)} or later).`};
+  }
+  return {ok:true, message:''};
+}
+
+function updateCoverageWarning() {
+  const box = $('coverageWarning');
+  if (!rawRows.length || !$('sheetDate').value) {
+    box.classList.add('hidden'); box.textContent='';
+    return false;
+  }
+  const status = reportCoverageStatus();
+  if (!status.ok) {
+    box.textContent = status.message;
+    box.classList.remove('hidden');
+    $('generateBtn').disabled = true;
+    return false;
+  }
+  box.classList.add('hidden'); box.textContent='';
+  $('generateBtn').disabled = false;
+  return true;
+}
+
+function gapRow(title, visibleLabel='', labelColumn=2) {
+  const label = visibleLabel ? `<span class="gap-label">${escapeHtml(visibleLabel)}</span>` : '&nbsp;';
+  const cells = Array.from({length:7}, (_,i) => `<td>${(i+1) === labelColumn ? label : '&nbsp;'}</td>`);
+  return `<tr class="schedule-gap" title="${escapeHtml(title)}">${cells.join('')}</tr>`;
+}
+
+function scheduleGapRows(gapMinutes, profession) {
+  // The CSV does not contain shift availability, so gaps are inferred only between
+  // the first and last booked appointment on this practitioner's day.
+  if (!Number.isFinite(gapMinutes) || gapMinutes < 10) return '';
+  const p = String(profession || '').toUpperCase();
+
+  // Massage: every writable opening is capped at 60 minutes. Any remainder
+  // gets its own final row, e.g. 145 minutes -> 60 + 60 + 25.
+  if (p === 'MT') {
+    const rounded = Math.round(gapMinutes);
+    const parts = [];
+    let remaining = rounded;
+    while (remaining > 60) {
+      parts.push(60);
+      remaining -= 60;
+    }
+    if (remaining > 0) parts.push(remaining);
+    return parts.map(mins => gapRow(`${rounded}-minute massage schedule gap`, `${mins} min gap`, 2)).join('');
+  }
+
+  // Physio: one writable row per complete 30-minute opening. Preserve the earlier
+  // extended-break rule so very long breaks do not consume the page.
+  if (p === 'PHYSIO' || p === 'PT') {
+    if (gapMinutes >= 180) return gapRow(`Extended physio schedule gap (${Math.round(gapMinutes)} minutes)`);
+    const count = Math.floor(gapMinutes / 30);
+    if (count < 1) return '';
+    return Array.from({length: count}, () => gapRow(`${Math.round(gapMinutes)}-minute physio schedule gap`)).join('');
+  }
+
+  // Chiro and other short-visit disciplines retain the 10-minute layout. A 3+ hour
+  // opening is treated as an extended break and represented by a single row.
+  if (gapMinutes >= 180) return gapRow(`Extended schedule gap (${Math.round(gapMinutes)} minutes)`);
+  const count = Math.floor(gapMinutes / 10);
+  if (count < 1) return '';
+  return Array.from({length: count}, () => gapRow(`${Math.round(gapMinutes)}-minute schedule gap`)).join('');
+}
+
+function renderAppointmentRowsWithGaps(appts, scheduleProfession, renderAppointmentRow) {
+  if (!appts.length) return '';
+  const sorted = [...appts].sort((a,b) => a.start-b.start || a.end-b.end);
+  let html = '';
+  let occupiedUntil = null;
+  let lastWorkshopKey = '';
+  for (const a of sorted) {
+    if (occupiedUntil) {
+      const gapMinutes = Math.floor((a.start.getTime() - occupiedUntil.getTime()) / 60000);
+      if (gapMinutes > 0) html += scheduleGapRows(gapMinutes, scheduleProfession);
+    }
+    if (isBRFWorkshop(a)) {
+      const workshopKey = `${a.start.getTime()}|${a.end.getTime()}|${normalize(a.practitioner)}|${normalize(a.treatment)}`;
+      if (workshopKey !== lastWorkshopKey) html += brfWorkshopHeaderRow();
+      lastWorkshopKey = workshopKey;
+    } else {
+      lastWorkshopKey = '';
+    }
+    html += renderAppointmentRow(a);
+    if (!occupiedUntil || a.end > occupiedUntil) occupiedUntil = a.end;
+  }
+  return html;
+}
+
+
+function isComplimentaryAppointment(a) {
+  return /\bcomplimentary\b/.test(normalize(a?.treatment));
+}
+
+function canonicalPersonKey(value) {
+  return String(value || '')
+    .replace(/^(?:dr|doctor|mr|mister|mrs|missus|ms|miss|mx|prof|professor)\.?\s+/i, '')
+    .replace(/[^\p{L}\p{N}\s'’\-]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function patientStaffIdentityKeys(row, mapping) {
+  const first = cleanPatientNamePart(mapping.patientFirst ? row[mapping.patientFirst] : '');
+  const preferred = cleanPatientNamePart(mapping.patientPreferred ? row[mapping.patientPreferred] : '');
+  const last = cleanPatientNamePart(mapping.patientLast ? row[mapping.patientLast] : '');
+  const keys = new Set();
+  for (const f of [preferred, first]) {
+    const key = canonicalPersonKey([f, last].filter(Boolean).join(' '));
+    if (key) keys.add(key);
+  }
+  if (!keys.size && mapping.patientName) {
+    const key = canonicalPersonKey(row[mapping.patientName]);
+    if (key) keys.add(key);
+  }
+  return [...keys];
+}
+
+function clinicStaffIdentityKeys(cfg) {
+  const keys = new Set();
+  for (const [rawName, c] of Object.entries(cfg || {})) {
+    for (const candidate of [rawName, c?.displayName]) {
+      const key = canonicalPersonKey(candidate);
+      if (key) keys.add(key);
+    }
+  }
+  // Synthetic demo staff who may receive complimentary appointments but do not
+  // necessarily appear in the practitioner list.
+  for (const employeeName of ['Jordan Lee', 'Morgan Brooks']) {
+    const key = canonicalPersonKey(employeeName);
+    if (key) keys.add(key);
+  }
+  return keys;
+}
+
+function isStaffComplimentaryAppointment(a) {
+  return !!a?.staffComp;
+}
+
+function isBRFWorkshop(a) {
+  const t = normalize(a?.treatment);
+  return /\bbrf\b/.test(t) || t.includes('better results faster workshop');
+}
+
+function brfWorkshopHeaderRow() {
+  return `<tr class="schedule-gap workshop-header"><td></td><td><span class="gap-label">BRF workshop:</span></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+}
+
+function staffCompHeaderRow() {
+  return `<tr class="schedule-gap staff-comp-header"><td></td><td><span class="gap-label">Staff comp:</span></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+}
+
+function pdfPractitionerLabel(displayName) {
+  const words = practitionerNameWords(displayName);
+  if (!words.length) return 'Practitioner';
+  const first = words[0];
+  if (words.length === 1) return first;
+  const last = words[words.length - 1];
+  const letter = last.match(/\p{L}/u)?.[0] || last.charAt(0);
+  return `${first} ${letter ? letter.toUpperCase() : ''}`.trim();
+}
+
+function pdfDateLabel(d) {
+  return `${d.getDate()} ${monthCodes[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function safePdfTitle(name) {
+  return String(name || 'Day Sheet').replace(/[\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim();
+}
+
+function dayOneOrTwoAppointment(a) {
+  const info = a?.markerInfo || appointmentMarkerInfo(a?.treatment);
+  return info.stage === 'Day 1 IA' || info.stage === 'Day 1' || info.stage === 'Day 2';
+}
+
+function generate() {
+  try {
+    saveSettings();
+    if (!rawRows.length) throw new Error('Choose a Appointments Report CSV first.');
+    const selectedDate = $('sheetDate').value;
+    if (!selectedDate) throw new Error('Choose a day-sheet date.');
+    const coverage = reportCoverageStatus();
+    if (!coverage.ok) throw new Error(coverage.message || 'Export a Appointments Report covering at least 183 days including the selected date.');
+    const cfg = readPractitionerConfig();
+    const all = convertRows();
+    if (!all.length) throw new Error('No readable appointment rows were found in this CSV.');
+
+    const today = all.filter(a => a.active && a.dateKey === selectedDate).sort((a,b) => a.start-b.start);
+    if (!today.length) throw new Error('No booked/confirmed/arrived appointments were found for the selected date.');
+
+    const idLikeNames = today.filter(a => looksLikeIdValue(a.patientName)).length;
+    if (idLikeNames / today.length > 0.4) throw new Error('The patient-name columns could not be read correctly. Please use the compatible Appointments Report CSV.');
+    const practitionerLikeNames = today.filter(a => normalize(a.patientName) === normalize(a.practitioner)).length;
+    if (practitionerLikeNames / today.length > 0.25) throw new Error('The patient-name columns could not be read correctly. Please use the compatible Appointments Report CSV.');
+
+    const selectedPractitioners = new Set(Object.entries(cfg).filter(([name,c]) => c.print !== false && !isSaunaPractitioner(name,c)).map(([name]) => name));
+    if (!selectedPractitioners.size) throw new Error('Select at least one practitioner to distribute.');
+    const byPractitioner = new Map();
+    for (const a of today) {
+      if (!selectedPractitioners.has(a.practitioner) || isSaunaPractitioner(a.practitioner, cfg[a.practitioner])) continue;
+      if (!byPractitioner.has(a.practitioner)) byPractitioner.set(a.practitioner, []);
+      byPractitioner.get(a.practitioner).push(a);
+    }
+    if (!byPractitioner.size) throw new Error('None of the selected practitioners have booked/confirmed/arrived appointments on this date.');
+
+    const dateObj = parseDateOnly(selectedDate);
+    let html = '';
+    let sheetCounter = 0;
+    const orderedPractitionerEntries = [...byPractitioner.entries()].sort((a,b) => comparePractitionersByProfession(a[0], b[0], cfg));
+    for (const [practitioner, appts] of orderedPractitionerEntries) {
+      sheetCounter += 1;
+      let redCount = 0, transferCount = 0;
+      const scheduleProfession = cfg[practitioner]?.profession || appts[0]?.profession || 'OTHER';
+      const columnCodes = appointmentColumnCodes(scheduleProfession);
+      const currentCode = columnCodes[0];
+      const renderOneAppointment = a => {
+        const future = futureAppointments(a,all,selectedDate);
+        const futureSameCount = future.filter(f => professionMatches(f, canonicalProfessionCode(a.profession))).length;
+        const complimentary = isComplimentaryAppointment(a);
+        const colorClass = complimentary ? 'patient-orange' : (futureSameCount === 0 ? 'patient-red' : futureSameCount === 1 ? 'patient-blue' : 'patient-black');
+        if (!complimentary && futureSameCount === 0 && !dayOneOrTwoAppointment(a)) redCount++;
+        const transfers = transferDetails(a,today,cfg);
+        transferCount += transfers.length;
+        const nextCells = columnCodes.map((code, idx) => nextProfessionText(a, all, selectedDate, cfg, code, idx === 0));
+        // Transfers are emphasized. Special appointment notes stay regular weight.
+        // Practitioner-assigned notes are shown as: [FirstName] note text,
+        // with only the [FirstName] label bolded.
+        const noteParts = transfers.map(t => `<strong>${escapeHtml(t.text)}</strong>`);
+        const todayNote = todayAppointmentNote(a);
+        if (todayNote) noteParts.push(`<strong>${escapeHtml(todayNote)}</strong>`);
+        if (a.practitionerNote) {
+          const noteFirstName = practitionerFirstNameDisplay(a.practitioner, cfg);
+          noteParts.push(`<strong>[${escapeHtml(noteFirstName)}]</strong> ${escapeHtml(a.practitionerNote)}`);
+        }
+        const transferHtml = noteParts.filter(Boolean).join('; ');
+        return `<tr class="${colorClass}" title="${futureSameCount} future ${escapeHtml(a.profession)} appointment(s)"><td class="time-cell">${escapeHtml(formatTimeOnly(a.start))}</td><td><span class="patient-name">${escapeHtml(a.patientName)}</span></td>${nextCells.map((v,idx) => `<td class="${idx === 0 ? 'primary-next-cell' : 'secondary-next-cell'}">${escapeHtml(v)}</td>`).join('')}<td class="notes-cell">${transferHtml}</td></tr>`;
+      };
+      const scheduledAppts = appts.filter(a => !isStaffComplimentaryAppointment(a));
+      const staffCompAppts = appts.filter(isStaffComplimentaryAppointment).sort((a,b) => a.start-b.start);
+      let rowsHtml = renderAppointmentRowsWithGaps(scheduledAppts, scheduleProfession, renderOneAppointment);
+      if (staffCompAppts.length) {
+        rowsHtml += staffCompHeaderRow();
+        rowsHtml += staffCompAppts.map(renderOneAppointment).join('');
+      }
+      const displayName = cfg[practitioner]?.displayName || practitioner;
+      const pdfLabel = pdfPractitionerLabel(displayName);
+      const pdfTitle = safePdfTitle(`DS - ${pdfLabel} - ${pdfDateLabel(dateObj)}`);
+      const sheetId = `day-sheet-${sheetCounter}`;
+      html += `<div class="sheet-preview-block"><div class="sheet-savebar"><button type="button" class="save-pdf-btn" data-sheet-id="${escapeHtml(sheetId)}" data-pdf-title="${escapeHtml(pdfTitle)}">Save PDF</button><button type="button" class="email-sheet-btn" data-practitioner="${escapeHtml(practitioner)}" data-display-name="${escapeHtml(displayName)}" data-pdf-title="${escapeHtml(pdfTitle)}">Email</button></div><section id="${escapeHtml(sheetId)}" class="day-sheet"><header class="sheet-header"><div class="sheet-brand"><div class="practitioner-name">${escapeHtml(displayName)}</div></div><div class="sheet-date">${escapeHtml(sheetDateHeading(dateObj))}</div><div class="metrics"><div>Total appointments: <strong>${appts.length}</strong></div><div>Total rebookings: <strong>${redCount}</strong></div><div>Total transfers: <strong>${transferCount}</strong></div></div></header><table class="day-table"><colgroup><col><col><col><col><col><col><col></colgroup><thead><tr><th>Time</th><th>Member Name</th>${columnCodes.map((code,idx) => `<th class="${idx === 0 ? 'primary-next-header' : 'secondary-next-header'}">${escapeHtml(nextHeaderLabel(code))}</th>`).join('')}<th>Transfers / Practitioner Assigned Tasks</th></tr></thead><tbody>${rowsHtml}</tbody></table></section></div>`;
+    }
+    $('output').innerHTML = html;
+    $('output').querySelectorAll('.save-pdf-btn').forEach(btn => btn.addEventListener('click', () => saveSinglePractitionerPdf(btn)));
+    $('output').querySelectorAll('.email-sheet-btn').forEach(btn => btn.addEventListener('click', () => emailPractitionerDaySheet(btn)));
+    $('status').innerHTML = `<span class="success-text">Preview ready: ${orderedPractitionerEntries.length} day sheet${orderedPractitionerEntries.length === 1 ? '' : 's'} generated.</span>`;
+    $('printBtn').disabled = false;
+  } catch (e) {
+    $('status').textContent = 'Error: ' + e.message;
+    $('printBtn').disabled = true;
+  }
+}
+
+
+function minimizeImportedData() {
+  const mapping = getMapping();
+  const needed = new Set(Object.values(mapping).filter(Boolean));
+  if (!needed.size) return;
+  const noteHeader = headers.find(h => normalize(h).replace(/ /g,'_') === 'notes_text') || '';
+  rawRows = rawRows.map(row => {
+    const minimal = {};
+    needed.forEach(h => { minimal[h] = row[h] ?? ''; });
+    if (noteHeader && mapping.practitioner) {
+      minimal.__practitioner_note = extractPractitionerTaggedNote(row[noteHeader], row[mapping.practitioner]);
+    }
+    return minimal;
+  });
+  headers = headers.filter(h => needed.has(h));
+}
+
+
+$('csvFile').addEventListener('change', async e => {
+  const file = (e.target.files || [])[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const parsed = parseCSV(text);
+    if (!parsed.headers.length) throw new Error('This file appears empty or could not be read as a CSV.');
+
+    // Load once, detect Jane columns, extract only practitioner-tagged notes, then discard the full notes field and unrelated columns.
+    headers = parsed.headers;
+    rawRows = parsed.rows;
+    if (!rawRows.length) throw new Error('The selected file contains no appointment rows.');
+    renderColumnMapping();
+    renderPractitionerSetup();
+    minimizeImportedData();
+    renderPractitionerSetup();
+    updateFileInfo();
+    const ok = updateCoverageWarning();
+    $('status').innerHTML = ok ? '<span class="success-text">File loaded. Choose the date and practitioners, then generate the preview.</span>' : '';
+    $('clearBtn').disabled = false;
+    $('printBtn').disabled = true;
+    $('output').innerHTML = '<div class="preview-empty">Generate day sheets to see the print preview.</div>';
+    e.target.value = '';
+  } catch (err) {
+    $('status').textContent = 'Error: ' + err.message;
+    $('generateBtn').disabled = true;
+  }
+});
+
+
+function saveSinglePractitionerPdf(button) {
+  const sheet = document.getElementById(button.dataset.sheetId);
+  if (!sheet) {
+    $('status').textContent = 'Could not find that practitioner day sheet.';
+    return;
+  }
+  const block = sheet.closest('.sheet-preview-block');
+  const previousTitle = document.title;
+  const pdfTitle = safePdfTitle(button.dataset.pdfTitle || 'Day Sheet');
+  document.title = pdfTitle;
+  document.body.classList.add('single-sheet-print');
+  if (block) block.classList.add('pdf-selected');
+
+  let restored = false;
+  const restore = () => {
+    if (restored) return;
+    restored = true;
+    document.title = previousTitle;
+    document.body.classList.remove('single-sheet-print');
+    if (block) block.classList.remove('pdf-selected');
+    window.removeEventListener('afterprint', restore);
+  };
+  window.addEventListener('afterprint', restore);
+  // The browser print dialog will show only this practitioner. Choose Save as PDF.
+  // The document title is set so the suggested filename is, e.g., DS - Karan S - 15 Sep 2026.pdf.
+  setTimeout(() => window.print(), 50);
+  setTimeout(restore, 30000);
+}
+
+
+function emailPractitionerDaySheet(button) {
+  const practitioner = button.dataset.practitioner || '';
+  const displayName = button.dataset.displayName || practitioner || 'Practitioner';
+  let email = practitionerConfig?.[practitioner]?.email || '';
+  if (!email) {
+    email = window.prompt(`Enter ${displayName}'s email address:`,'') || '';
+    email = email.trim();
+    if (!email) return;
+    if (practitionerConfig[practitioner]) practitionerConfig[practitioner].email = email;
+  }
+  const pdfTitle = safePdfTitle(button.dataset.pdfTitle || 'Day Sheet');
+  const subject = `Day Sheet - ${pdfTitle.replace(/^DS\s*-\s*/i,'')}`;
+  const body = `Please see attached day sheet.`;
+  $('status').textContent = `Outlook opened for ${displayName}. Attach the saved PDF named "${pdfTitle}.pdf" before sending.`;
+  const outlookUrl = `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(email)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  // Open Outlook on the web exactly once in a separate tab so the Day Sheet System remains open.
+  // Do not use a window.open fallback check here: with noopener some browsers report null
+  // even when the first tab opened successfully, which can cause a duplicate Outlook tab.
+  const a = document.createElement('a');
+  a.href = outlookUrl;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+$('sheetDate').addEventListener('change', () => {
+  renderPractitionerSetup();
+  updateCoverageWarning();
+  $('printBtn').disabled = true;
+  $('output').innerHTML = '<div class="preview-empty">Generate day sheets to see the print preview.</div>';
+});
+$('generateBtn').addEventListener('click', generate);
+$('printBtn').addEventListener('click', () => {
+  if (!$('output').querySelector('.day-sheet')) {
+    $('status').textContent = 'Generate the day sheets before printing.';
+    return;
+  }
+  window.print();
+});
+$('clearBtn').addEventListener('click', () => {
+  rawRows = []; headers = []; practitionerConfig = {};
+  $('csvFile').value = '';
+  $('columnMapping').innerHTML = '';
+  $('practitionerSetup').innerHTML = '<div class="empty-selector">Upload a Appointments Report first.</div>';
+  $('fileInfo').textContent = '';
+  $('output').innerHTML = '<div class="preview-empty">Generate day sheets to see the print preview.</div>';
+  $('status').textContent = 'Patient data cleared.';
+  $('coverageWarning').classList.add('hidden');
+  $('coverageWarning').textContent = '';
+  $('generateBtn').disabled = true;
+  $('printBtn').disabled = true;
+  $('clearBtn').disabled = true;
+});
+</script>
+</body>
+</html>
