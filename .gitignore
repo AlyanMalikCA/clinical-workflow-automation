@@ -1,0 +1,25 @@
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Environment / credentials
+.env
+.env.*
+*.key
+*.pem
+
+# Prevent accidental upload of real clinic exports
+*.csv
+!sample-data/synthetic_appointments.csv
+
+# Temporary exports
+*.pdf
+*.xlsx
+*.xls
+
+# Backups
+*.bak
+*.tmp
+*~
